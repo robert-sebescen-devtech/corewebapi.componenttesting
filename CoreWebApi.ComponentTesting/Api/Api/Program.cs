@@ -26,12 +26,17 @@ namespace Api
                 ConnectionString = "mongodb://localhost:27017",
                 Database = "Api"
             };
+            var tasksConfiguration = new TasksConfiguration
+            {
+                BaseUrl = "http://localhost:34127"
+            };
 
             return WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
                 .ConfigureServices(configureServices =>
                 {
                     configureServices.AddSingleton<MongoConfiguration>(mongoConfiguration);
+                    configureServices.AddSingleton(tasksConfiguration);
                 })
                 .Build();
         }

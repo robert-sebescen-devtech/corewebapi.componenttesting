@@ -10,9 +10,11 @@ namespace Api.Tickets
     public class TicketsController : Controller
     {
         private readonly TicketsRepository _tickets;
-        public TicketsController(TicketsRepository tickets)
+        private readonly TaskManager _taskManager;
+        public TicketsController(TicketsRepository tickets, TaskManager taskManager)
         {
             _tickets = tickets;
+            _taskManager = taskManager;
         }
         [Route("{id}")]
         public ActionResult Get(Guid id)
@@ -21,9 +23,10 @@ namespace Api.Tickets
         }
 
         [HttpPost]
-        public ActionResult Post([FromBody] Ticket ticket)
+        public async Task<ActionResult> Post([FromBody] Ticket ticket)
         {
             _tickets.Create(ticket);
+            await _taskManager.Create(ticket);
             return Created($"/api/tickets/{ticket.Id}", ticket);
         }
     }
