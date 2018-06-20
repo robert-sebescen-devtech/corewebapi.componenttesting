@@ -14,12 +14,14 @@ namespace Api.Tickets
         {
             _tickets = tickets;
         }
+        [Route("{id}")]
         public ActionResult Get(Guid id)
         {
             return new JsonResult(_tickets.Get(id));
         }
 
-        public ActionResult Post(Ticket ticket)
+        [HttpPost]
+        public ActionResult Post([FromBody] Ticket ticket)
         {
             _tickets.Create(ticket);
             return Created($"/api/tickets/{ticket.Id}", ticket);
