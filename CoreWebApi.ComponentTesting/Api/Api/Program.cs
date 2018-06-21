@@ -21,15 +21,8 @@ namespace Api
 
         public static IWebHost BuildWebHost(string[] args)
         {
-            var mongoConfiguration = new MongoConfiguration
-            {
-                ConnectionString = "mongodb://localhost:27017",
-                Database = "Api"
-            };
-            var tasksConfiguration = new TasksConfiguration
-            {
-                BaseUrl = "http://localhost:34127"
-            };
+            var mongoConfiguration = new MongoConfiguration("mongodb://localhost:27017", "Api");
+            var tasksConfiguration = new TasksConfiguration("http://localhost:34127");
 
             return WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()

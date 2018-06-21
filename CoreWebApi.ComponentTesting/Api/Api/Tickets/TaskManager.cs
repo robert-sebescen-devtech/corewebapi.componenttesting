@@ -9,11 +9,14 @@ namespace Api.Tickets
     public class TaskManager
     {
         private readonly string _baseUrl;
-        static HttpClient client = new HttpClient();
+        static HttpClient client;
 
         public TaskManager(TasksConfiguration configuration)
         {
             _baseUrl = configuration.BaseUrl;
+            client = configuration.Handler == null
+                ? new HttpClient() 
+                : new HttpClient(configuration.Handler);
         }
         internal async Task<Uri> Create(Ticket ticket)
         {

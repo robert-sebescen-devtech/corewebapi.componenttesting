@@ -26,7 +26,7 @@ namespace Api.Tickets
         public async Task<ActionResult> Post([FromBody] Ticket ticket)
         {
             _tickets.Create(ticket);
-            await _taskManager.Create(ticket);
+            //await _taskManager.Create(ticket);
             return Created($"/api/tickets/{ticket.Id}", ticket);
         }
     }
