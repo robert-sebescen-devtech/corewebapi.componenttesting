@@ -23,13 +23,15 @@ namespace Api
         {
             var mongoConfiguration = new MongoConfiguration("mongodb://localhost:27017", "Api");
             var tasksConfiguration = new TasksConfiguration("http://localhost:34127");
+            var mailerConfiguration = new MailerConfiguration("smtp.domain.com", 25);
 
             return WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
                 .ConfigureServices(configureServices =>
                 {
-                    configureServices.AddSingleton<MongoConfiguration>(mongoConfiguration);
+                    configureServices.AddSingleton(mongoConfiguration);
                     configureServices.AddSingleton(tasksConfiguration);
+                    configureServices.AddSingleton(mailerConfiguration);
                 })
                 .Build();
         }

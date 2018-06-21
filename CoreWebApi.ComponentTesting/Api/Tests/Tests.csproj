@@ -130,8 +130,14 @@
     <Reference Include="MongoDB.Driver.Core, Version=2.6.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MongoDB.Driver.Core.2.6.1\lib\net45\MongoDB.Driver.Core.dll</HintPath>
     </Reference>
+    <Reference Include="nDumbster, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\nDumbster.1.0.3.0\lib\net40\nDumbster.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenPop, Version=2.0.4.369, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\nDumbster.1.0.3.0\lib\net40\OpenPop.dll</HintPath>
     </Reference>
     <Reference Include="RichardSzalay.MockHttp, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\RichardSzalay.MockHttp.5.0.0\lib\net45\RichardSzalay.MockHttp.dll</HintPath>
@@ -230,6 +236,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ApiFixture.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="TicketsApiShould.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

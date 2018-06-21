@@ -1,16 +1,12 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using System;
-using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
+using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
-using Api;
-using Api.Configuration;
 using Api.ThirdParty;
 using Api.Tickets;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection;
-using Mongo2Go;
 using MongoDB.Driver;
 using RichardSzalay.MockHttp;
 using Xunit;
@@ -35,10 +31,14 @@ namespace Tests
                 ""text"":""Something"",
             }
             ";
+            var taskUrl = "http://localhost:5000/api/tasks/" + Guid.NewGuid();
             _fixture.TasksApiBehavior
                 .Expect(HttpMethod.Post, $"http://localhost:5000/api/tasks")
                 .With(taskApiRequest => taskApiRequest.Content.As<NewTask>().Request.Equals("Something"))
-                .Respond("application/json", "");
+                .Respond(new List<KeyValuePair<string, string>>()
+                {
+                    new KeyValuePair<string, string>("Location", taskUrl)
+                },"application/json", "");
 
 
             HttpClient client = new HttpClient(_fixture.Handler);
@@ -54,57 +54,13 @@ namespace Tests
             Assert.Equal("Normal", dbTicket.Type);
             Assert.Equal("Something", dbTicket.Text);
             _fixture.TasksApiBehavior.VerifyNoOutstandingExpectation();
-        }
-    }
 
-    public class ApiFixture : IDisposable
-    {
-        private TestServer _server;
-        private MongoDbRunner _mongoDbRunner;
-        
-        public IMongoDatabase TestDb { get; set; }
-        public MockHttpMessageHandler TasksApiBehavior { get; set; }
-        public HttpMessageHandler Handler;
-
-        public ApiFixture()
-        {
-            StartMongo2Go();
-
-            TasksApiBehavior = new MockHttpMessageHandler();
-
-            StartApi();
-        }
-
-        private void StartApi()
-        {
-            var taskConfiguration = new TasksConfiguration("http://localhost:5000", TasksApiBehavior);
-            var mongoConfiguration = new MongoConfiguration(_mongoDbRunner.ConnectionString, "Api");
-
-            var builder = new WebHostBuilder()
-                .UseStartup<Startup>()
-                .ConfigureServices(configureServices =>
-                {
-                    configureServices.AddSingleton(mongoConfiguration);
-                    configureServices.AddSingleton(taskConfiguration);
-                });
-            _server = new TestServer(builder);
-            Handler = _server.CreateHandler();
-        }
-
-        private void StartMongo2Go()
-        {
-            var dataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "mongodb/data/");
-            _mongoDbRunner = MongoDbRunner.Start(dataDirectory);
-
-            var mongoClient = new MongoClient(_mongoDbRunner.ConnectionString);
-            TestDb = mongoClient.GetDatabase("Api");
-        }
-
-        public void Dispose()
-        {
-            Handler.Dispose();
-            _server.Dispose();
-            _mongoDbRunner.Dispose();
+            var receivedEmail = _fixture.SmtpServer.ReceivedEmail.FirstOrDefault();
+            Assert.NotNull(receivedEmail);
+            Assert.Equal("noreply@localhost.com", receivedEmail.From.Address);
+            Assert.Equal("administrators@company.com", receivedEmail.To.First().Address);
+            Assert.Equal("New ticket created", receivedEmail.Subject);
+            Assert.Equal($"Please check the created ticket at {taskUrl}", receivedEmail.Body);
         }
     }
 }
