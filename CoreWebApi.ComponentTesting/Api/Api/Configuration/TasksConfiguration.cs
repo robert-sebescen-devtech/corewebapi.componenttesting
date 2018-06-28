@@ -9,12 +9,12 @@ namespace Api.Configuration
     public class TasksConfiguration
     {
         public string BaseUrl { get; }
-        public HttpMessageHandler Handler { get; }
+        public HttpClient Client { get; }
 
-        public TasksConfiguration(string baseUrl, HttpMessageHandler handler = null)
+        public TasksConfiguration(string baseUrl, HttpClient client = null)
         {
             BaseUrl = baseUrl;
-            Handler = handler;
+            Client = client;
         }
     }
 }

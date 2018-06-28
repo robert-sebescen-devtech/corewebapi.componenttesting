@@ -19,6 +19,6 @@ namespace Api.ThirdParty
     public class NewTask
     {
         public Guid Id { get; set; } = Guid.NewGuid();
-        public string Request { get; set; }
+        public string TaskDescription { get; set; }
     }
 }

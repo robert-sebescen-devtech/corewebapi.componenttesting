@@ -9,23 +9,21 @@ namespace Api.Tickets
     public class TaskManager
     {
         private readonly string _baseUrl;
-        static HttpClient client;
+        static HttpClient _client;
 
         public TaskManager(TasksConfiguration configuration)
         {
             _baseUrl = configuration.BaseUrl;
-            client = configuration.Handler == null
-                ? new HttpClient() 
-                : new HttpClient(configuration.Handler);
+            _client = configuration.Client ?? new HttpClient();
         }
-        internal async Task<Uri> Create(Ticket ticket)
+        internal async Task<Uri> Create(string taskDescription)
         {
             var request = Newtonsoft.Json.JsonConvert.SerializeObject(new
             {
-                Request = ticket.Text
+                TaskDescription = taskDescription
             });
 
-            HttpResponseMessage response = await client.PostAsync(
+            HttpResponseMessage response = await _client.PostAsync(
                 $"{_baseUrl}/api/tasks", new StringContent(request));
             response.EnsureSuccessStatusCode();
             

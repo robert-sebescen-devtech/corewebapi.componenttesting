@@ -16,7 +16,7 @@ namespace Tests
     public class ApiFixture : IDisposable
     {
         private TestServer _server;
-        private MongoDbRunner _mongoDbRunner;
+        private MongoDbRunner _testMongoDb;
         
         public IMongoDatabase TestDb { get; set; }
         public MockHttpMessageHandler TasksApiBehavior { get; set; }
@@ -40,28 +40,36 @@ namespace Tests
 
         private void StartApi()
         {
-            var taskConfiguration = new TasksConfiguration("http://localhost:5000", TasksApiBehavior);
-            var mongoConfiguration = new MongoConfiguration(_mongoDbRunner.ConnectionString, "Api");
-            var mailerConfiguration = new MailerConfiguration("localhost", 25);
+            var mongoConfiguration = new MongoConfiguration(_testMongoDb.ConnectionString, "Api");
+            var tasksConfiguration = new TasksConfiguration(TasksApiBaseUrl, TasksApiBehavior.ToHttpClient());
+            var mailerConfiguration = new MailerConfiguration(FakeSmtpHost, 25);
 
             var builder = new WebHostBuilder()
                 .UseStartup<Startup>()
                 .ConfigureServices(configureServices =>
                 {
                     configureServices.AddSingleton(mongoConfiguration);
-                    configureServices.AddSingleton(taskConfiguration);
+                    configureServices.AddSingleton(tasksConfiguration);
                     configureServices.AddSingleton(mailerConfiguration);
                 });
             _server = new TestServer(builder);
             Handler = _server.CreateHandler();
         }
 
+        private static string FakeSmtpHost
+        {
+            get { return "localhost"; }
+        }
+
+        public string TasksApiBaseUrl => "http://localhost:5000";
+        public Uri ApiBaseUrl => new Uri("http://localhost:5000");
+
         private void StartMongo2Go()
         {
             var dataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "mongodb/data/");
-            _mongoDbRunner = MongoDbRunner.Start(dataDirectory);
+            _testMongoDb = MongoDbRunner.Start(dataDirectory);
 
-            var mongoClient = new MongoClient(_mongoDbRunner.ConnectionString);
+            var mongoClient = new MongoClient(_testMongoDb.ConnectionString);
             TestDb = mongoClient.GetDatabase("Api");
         }
 
@@ -69,7 +77,7 @@ namespace Tests
         {
             Handler.Dispose();
             _server.Dispose();
-            _mongoDbRunner.Dispose();
+            _testMongoDb.Dispose();
             SmtpServer.Dispose();
         }
     }

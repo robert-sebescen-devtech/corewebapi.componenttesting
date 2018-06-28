@@ -10,13 +10,13 @@ namespace Api.Tickets
     public class TicketsController : Controller
     {
         private readonly TicketsRepository _tickets;
-        private readonly TaskManager _taskManager;
+        private readonly TaskManager _tasks;
         private readonly Mailer _mailer;
 
-        public TicketsController(TicketsRepository tickets, TaskManager taskManager, Mailer mailer)
+        public TicketsController(TicketsRepository tickets, TaskManager tasks, Mailer mailer)
         {
             _tickets = tickets;
-            _taskManager = taskManager;
+            _tasks = tasks;
             _mailer = mailer;
         }
         [Route("{id}")]
@@ -29,7 +29,7 @@ namespace Api.Tickets
         public async Task<ActionResult> Post([FromBody] Ticket ticket)
         {
             _tickets.Create(ticket);
-            var taskUri = await _taskManager.Create(ticket);
+            var taskUri = await _tasks.Create(ticket.Text);
             _mailer.SendTask(taskUri);
             return Created($"/api/tickets/{ticket.Id}", ticket);
         }

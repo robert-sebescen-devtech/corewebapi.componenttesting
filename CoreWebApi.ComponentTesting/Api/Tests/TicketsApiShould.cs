@@ -25,42 +25,83 @@ namespace Tests
         [Fact]
         public async Task CreateTicketAndTask()
         {
+            // ARRANGE
             var request = @"
             {
                 ""type"":""Normal"",
                 ""text"":""Something"",
             }
             ";
-            var taskUrl = "http://localhost:5000/api/tasks/" + Guid.NewGuid();
+            var newTaskId = Guid.NewGuid();
+            var createdTaskUri = $"{TasksApiBaseUrl}/api/tasks/{newTaskId}";
+
+            // SETUP
             _fixture.TasksApiBehavior
-                .Expect(HttpMethod.Post, $"http://localhost:5000/api/tasks")
-                .With(taskApiRequest => taskApiRequest.Content.As<NewTask>().Request.Equals("Something"))
-                .Respond(new List<KeyValuePair<string, string>>()
-                {
-                    new KeyValuePair<string, string>("Location", taskUrl)
-                },"application/json", "");
+                .Expect(HttpMethod.Post, $"{_fixture.TasksApiBaseUrl}/api/tasks")
+                .With(taskApiRequest => taskApiRequest
+                        .Content.As<NewTask>()
+                        .TaskDescription.Equals("Something"))
+                .Respond(
+                    headers: new List<KeyValuePair<string, string>>()
+                    {
+                        new KeyValuePair<string, string>("Location", createdTaskUri)
+                    },
+                    mediaType: "application/json", 
+                    content: ""
+                );
 
-
-            HttpClient client = new HttpClient(_fixture.Handler);
-            client.BaseAddress = new Uri("http://localhost:5000");
+            // ACT
+            HttpClient client = new HttpClient(TestHostMessageHandler)
+            {
+                BaseAddress = TestHostBaseUri
+            };
             HttpResponseMessage response = await client.PostAsync(
-                "api/tickets", new StringContent(request, Encoding.Unicode, "application/json"));
+                "api/tickets", 
+                new StringContent(
+                    content: request, 
+                    encoding: Encoding.Unicode, 
+                    mediaType: "application/json"));
+            
+            // ASSERT
             response.EnsureSuccessStatusCode();
-
             Ticket createdTicket = response.Content.As<Ticket>();
 
-            var dbTicket = _fixture.TestDb.GetCollection<Ticket>("tickets").FindSync(ticket => ticket.Id.Equals(createdTicket.Id)).FirstOrDefault();
+            // ASSERT DB
+            var dbTicket = _fixture
+                .TestDb
+                .GetCollection<Ticket>("tickets")
+                .FindSync(ticket => ticket.Id.Equals(createdTicket.Id))
+                .SingleOrDefault();
             Assert.NotNull(dbTicket);
             Assert.Equal("Normal", dbTicket.Type);
             Assert.Equal("Something", dbTicket.Text);
-            _fixture.TasksApiBehavior.VerifyNoOutstandingExpectation();
 
-            var receivedEmail = _fixture.SmtpServer.ReceivedEmail.FirstOrDefault();
+            // ASSERT TASKS API
+            _fixture.TasksApiBehavior.VerifyNoOutstandingExpectation();
+            
+            // ASSERT SMTP
+            Assert.Equal(1, _fixture.SmtpServer.ReceivedEmailCount);
+            var receivedEmail = _fixture.SmtpServer.ReceivedEmail.SingleOrDefault();
             Assert.NotNull(receivedEmail);
             Assert.Equal("noreply@localhost.com", receivedEmail.From.Address);
             Assert.Equal("administrators@company.com", receivedEmail.To.First().Address);
             Assert.Equal("New ticket created", receivedEmail.Subject);
-            Assert.Equal($"Please check the created ticket at {taskUrl}", receivedEmail.Body);
+            Assert.Equal($"Please check the created ticket at {createdTaskUri}", receivedEmail.Body);
+        }
+
+        private Uri TestHostBaseUri
+        {
+            get { return _fixture.ApiBaseUrl; }
+        }
+
+        private HttpMessageHandler TestHostMessageHandler
+        {
+            get { return _fixture.Handler; }
+        }
+
+        private string TasksApiBaseUrl
+        {
+            get { return _fixture.TasksApiBaseUrl; }
         }
     }
 }
